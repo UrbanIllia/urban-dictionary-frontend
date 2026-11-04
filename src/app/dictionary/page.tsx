@@ -180,7 +180,7 @@ function Dictionary() {
     <ProtectedRoute>
       <main className="mx-auto w-full space-y-6 p-4 sm:p-6 lg:w-3/4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-300">My Dictionary</h1>
+          <h1 className="text-2xl font-bold text-gray-400">My Dictionary</h1>
 
           <p className="mt-1 text-sm text-gray-500">
             Add and manage your English words

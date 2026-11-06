@@ -5,6 +5,7 @@ export const wordSchema = z.object({
   translation: z.string().min(1, 'Введите перевод'),
   learned: z.boolean(),
   it: z.boolean(),
+  irregularVerb: z.boolean(),
 });
 
 export type TWordForm = z.infer<typeof wordSchema>;

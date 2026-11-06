@@ -76,7 +76,10 @@ function Dictionary() {
   };
 
   const handleAddWord = async (
-    word: Pick<Word, 'word' | 'translation' | 'learned' | 'it'>
+    word: Pick<
+      Word,
+      'word' | 'translation' | 'learned' | 'it' | 'irregularVerb'
+    >
   ): Promise<void> => {
     try {
       const newWord = await createWord(word);
@@ -135,6 +138,30 @@ function Dictionary() {
       toast.error('Failed to update learned status');
     }
   };
+
+  const handleToggleIrrVerb = async (id: number) => {
+    const currentWord = words.find((word) => word.id === id);
+
+    if (!currentWord) return;
+
+    try {
+      const updatedWord = await updateWord(id, {
+        ...currentWord,
+        irregularVerb: !currentWord.irregularVerb,
+      });
+
+      setWords((prev) =>
+        prev.map((word) => (word.id === id ? updatedWord : word))
+      );
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        return;
+      }
+
+      console.error('Failed to update irregular verb status:', error);
+      toast.error('Failed to update irregular verb status');
+    }
+  };
   const handleToggleIt = async (id: number) => {
     const currentWord = words.find((word) => word.id === id);
 
@@ -172,10 +199,6 @@ function Dictionary() {
     word.word.toLowerCase().includes(query.trim().toLowerCase())
   );
 
-  if (isLoading) {
-    return <p className="p-6">Loading words...</p>;
-  }
-
   return (
     <ProtectedRoute>
       <main className="mx-auto w-full space-y-6 p-4 sm:p-6 lg:w-3/4">
@@ -194,9 +217,11 @@ function Dictionary() {
 
         <WordsTable
           words={filteredWords}
+          isLoading={isLoading}
           onDelete={handleDeleteWord}
           onToggleLearned={handleToggleLearned}
           onToggleIt={handleToggleIt}
+          onToggleIrrVerb={handleToggleIrrVerb}
           onEdit={(id) => {
             const word = words.find((word) => word.id === id);
             console.log('Edit clicked:', id);

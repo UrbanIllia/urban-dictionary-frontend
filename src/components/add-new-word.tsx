@@ -8,7 +8,10 @@ import toast from 'react-hot-toast';
 
 interface AddNewWordProps {
   onAdd: (
-    word: Pick<Word, 'word' | 'translation' | 'learned' | 'it'>
+    word: Pick<
+      Word,
+      'word' | 'translation' | 'learned' | 'it' | 'irregularVerb'
+    >
   ) => Promise<void>;
   onQueryChange: (value: string) => void;
 }
@@ -27,6 +30,7 @@ function AddNewWord({ onAdd, onQueryChange }: AddNewWordProps) {
       translation: '',
       learned: false,
       it: false,
+      irregularVerb: false,
     },
   });
   const onSubmit = async (data: TWordForm) => {
@@ -36,6 +40,7 @@ function AddNewWord({ onAdd, onQueryChange }: AddNewWordProps) {
         translation: data.translation,
         learned: data.learned,
         it: data.it,
+        irregularVerb: data.irregularVerb,
       });
 
       reset();
@@ -101,12 +106,12 @@ function AddNewWord({ onAdd, onQueryChange }: AddNewWordProps) {
             </p>
           )}
         </div>
-        <div className="flex flex-row gap-2 md:gap-3 xl:gap-4">
+        <div className="flex flex-row gap-8 md:gap-3 xl:gap-4 justify-center">
           {' '}
           <div className="flex flex-col gap-4">
             <label
               htmlFor="learned"
-              className="mb-1 block text-sm font-medium text-gray-700"
+              className="mb-1 block text-sm font-medium text-gray-700 text-center"
             >
               Learned
             </label>
@@ -114,13 +119,13 @@ function AddNewWord({ onAdd, onQueryChange }: AddNewWordProps) {
               type="checkbox"
               {...register('learned')}
               id="learned"
-              className="w-8 h-8 cursor-pointer accent-yellow-500"
+              className="w-6 h-6 md:w-7 md:h-7 xl:w-8 xl:h-8 cursor-pointer accent-yellow-500"
             />
           </div>
           <div className="flex flex-col gap-4">
             <label
               htmlFor="it"
-              className="mb-1 block text-sm font-medium text-gray-700 "
+              className="mb-1 block text-sm font-medium text-gray-700 text-center"
             >
               It
             </label>
@@ -128,7 +133,21 @@ function AddNewWord({ onAdd, onQueryChange }: AddNewWordProps) {
               type="checkbox"
               {...register('it')}
               id="it"
-              className="w-8 h-8 cursor-pointer accent-red-500"
+              className="w-6 h-6 md:w-7 md:h-7 xl:w-8 xl:h-8 cursor-pointer accent-red-500"
+            />
+          </div>
+          <div className="flex flex-col gap-4">
+            <label
+              htmlFor="verb"
+              className="mb-1 block text-sm font-medium text-gray-700 text-center"
+            >
+              IrrVerbs
+            </label>
+            <input
+              type="checkbox"
+              {...register('irregularVerb')}
+              id="verb"
+              className="w-6 h-6 md:w-7 md:h-7 xl:w-8 xl:h-8 cursor-pointer accent-green-500"
             />
           </div>
         </div>

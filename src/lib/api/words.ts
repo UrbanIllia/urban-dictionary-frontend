@@ -44,7 +44,7 @@ export function getWords(): Promise<Word[]> {
 
 export function createWord(
   data: Pick<Word, 'word' | 'translation'> &
-    Partial<Pick<Word, 'learned' | 'it'>>
+    Partial<Pick<Word, 'learned' | 'it' | 'irregularVerb'>>
 ): Promise<Word> {
   return request<Word>('/api/words', {
     method: 'POST',
@@ -54,7 +54,7 @@ export function createWord(
 
 export function updateWord(
   id: number,
-  data: Pick<Word, 'word' | 'translation' | 'learned' | 'it'>
+  data: Pick<Word, 'word' | 'translation' | 'learned' | 'it' | 'irregularVerb'>
 ): Promise<Word> {
   return request<Word>(`/api/words/${id}`, {
     method: 'PUT',

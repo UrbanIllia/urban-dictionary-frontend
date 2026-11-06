@@ -4,6 +4,7 @@ export interface Word {
   translation: string;
   learned: boolean;
   it: boolean;
+  irregularVerb: boolean;
 }
 
 export type TLearnedFilter = 'all' | 'learned' | 'notLearned';

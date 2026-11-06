@@ -20,7 +20,8 @@ const shuffleWords = (words: Word[]): Word[] => {
 const getFilteredWords = (
   words: Word[],
   learnedFilter: TLearnedFilter,
-  filterIt: boolean
+  filterIt: boolean,
+  filterVerb: boolean
 ): Word[] => {
   return words.filter((word) => {
     const matchesLearned =
@@ -29,8 +30,9 @@ const getFilteredWords = (
       (learnedFilter === 'notLearned' && !word.learned);
 
     const matchesIt = !filterIt || word.it === true;
+    const matchesVerb = !filterVerb || word.irregularVerb === true;
 
-    return matchesLearned && matchesIt;
+    return matchesLearned && matchesIt && matchesVerb;
   });
 };
 
@@ -49,6 +51,7 @@ export default function TrainingPage() {
 
   const [learnedFilter, setLearnedFilter] = useState<TLearnedFilter>('all');
   const [filterIt, setFilterIt] = useState(false);
+  const [filterVerb, setFilterVerb] = useState(false);
   const [isSessionCompleted, setIsSessionCompleted] = useState(false);
 
   const router = useRouter();
@@ -61,7 +64,7 @@ export default function TrainingPage() {
         setWords(data);
 
         const initialSession = shuffleWords(
-          getFilteredWords(data, 'all', false)
+          getFilteredWords(data, 'all', false, false)
         );
 
         setSessionWordIds(initialSession.map((word) => word.id));
@@ -83,16 +86,23 @@ export default function TrainingPage() {
 
   const currentWord = words.find((word) => word.id === currentWordId);
 
-  const filteredWords = getFilteredWords(words, learnedFilter, filterIt);
+  const filteredWords = getFilteredWords(
+    words,
+    learnedFilter,
+    filterIt,
+    filterVerb
+  );
 
   const startNewSession = (
     nextLearnedFilter: TLearnedFilter,
-    nextFilterIt: boolean
+    nextFilterIt: boolean,
+    nextFilterVerb: boolean
   ) => {
     const matchingWords = getFilteredWords(
       words,
       nextLearnedFilter,
-      nextFilterIt
+      nextFilterIt,
+      nextFilterVerb
     );
 
     const shuffledWords = shuffleWords(matchingWords);
@@ -169,7 +179,22 @@ export default function TrainingPage() {
       console.error('Failed to update learned status:', error);
     }
   };
+  const handleToggleVerb = async () => {
+    if (!currentWord) return;
 
+    try {
+      const updatedWord = await updateWord(currentWord.id, {
+        ...currentWord,
+        irregularVerb: !currentWord.irregularVerb,
+      });
+
+      setWords((prev) =>
+        prev.map((word) => (word.id === currentWord.id ? updatedWord : word))
+      );
+    } catch (error) {
+      console.error('Failed to update irregular verb status:', error);
+    }
+  };
   const handleToggleIt = async () => {
     if (!currentWord) return;
 
@@ -189,12 +214,16 @@ export default function TrainingPage() {
 
   const handleLearnedFilterChange = (nextFilter: TLearnedFilter) => {
     setLearnedFilter(nextFilter);
-    startNewSession(nextFilter, filterIt);
+    startNewSession(nextFilter, filterIt, filterVerb);
   };
 
   const handleItFilterChange = (nextFilterIt: boolean) => {
     setFilterIt(nextFilterIt);
-    startNewSession(learnedFilter, nextFilterIt);
+    startNewSession(learnedFilter, nextFilterIt, filterVerb);
+  };
+  const handleVerbFilterChange = (nextFilterVerb: boolean) => {
+    setFilterVerb(nextFilterVerb);
+    startNewSession(learnedFilter, filterIt, nextFilterVerb);
   };
 
   if (!isLoaded) {
@@ -236,7 +265,7 @@ export default function TrainingPage() {
   if (!currentWord) {
     return (
       <main className="mx-auto w-3/4 md:w-2/4 p-4 sm:p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-6 text-center sm:p-8">
+        <div className="rounded-xl border border-gray-200 bg-white p-6 text-center sm:p-8 flex flex-col items-center justify-center">
           <h1 className="text-xl font-semibold text-gray-800">
             No words match these filters
           </h1>
@@ -244,12 +273,20 @@ export default function TrainingPage() {
           <p className="mt-2 text-gray-500">
             Try changing the filters to start a training session.
           </p>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            aria-label="Back to dictionary"
+            className="mt-2 flex cursor-pointer items-center justify-center rounded-xl border-2 border-gray-800 p-4 transition hover:bg-zinc-500 hover:text-white"
+          >
+            <SquareChevronLeft size={44} color="#000000" />
+          </button>
         </div>
       </main>
     );
   }
 
-  const isLastWord = sessionIndex >= sessionWordIds.length - 1;
+  // const isLastWord = sessionIndex >= sessionWordIds.length - 1;
 
   return (
     <main className="mx-auto w-4/5 space-y-4 bg-zinc-400 p-4 sm:space-y-6 sm:p-6 md:w-3/4 xl:w-1/2">
@@ -291,6 +328,16 @@ export default function TrainingPage() {
             />
 
             <span className="text-gray-900">IT</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={filterVerb}
+              onChange={(event) => handleVerbFilterChange(event.target.checked)}
+              className="h-5 w-5 cursor-pointer accent-green-500"
+            />
+
+            <span className="text-gray-900">IrrVerb</span>
           </label>
 
           <span className="text-sm text-gray-500">
@@ -348,6 +395,11 @@ export default function TrainingPage() {
             LEARNED
           </p>
         )}
+        {currentWord.irregularVerb && (
+          <p className="absolute left-1/2 translate-x-[-50%] top-5 rounded-xl border border-green-600 px-4 py-2 text-2xl font-semibold text-green-600">
+            IRRVERB
+          </p>
+        )}
       </div>
 
       <div className="mt-5 flex flex-col items-center justify-center gap-4">
@@ -374,6 +426,17 @@ export default function TrainingPage() {
             />
 
             <span className="font-medium text-gray-900">IT</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={currentWord.irregularVerb ?? false}
+              onChange={handleToggleVerb}
+              onClick={(event) => event.stopPropagation()}
+              className="h-8 w-8 cursor-pointer accent-red-500"
+            />
+
+            <span className="font-medium text-gray-900">IrrVerb</span>
           </label>
         </div>
       </div>
@@ -412,7 +475,9 @@ export default function TrainingPage() {
 
             <button
               type="button"
-              onClick={() => startNewSession(learnedFilter, filterIt)}
+              onClick={() =>
+                startNewSession(learnedFilter, filterIt, filterVerb)
+              }
               className="mt-3 cursor-pointer rounded-lg bg-blue-600 px-5 py-2.5 text-lg font-medium text-white transition hover:bg-blue-700"
             >
               Start again

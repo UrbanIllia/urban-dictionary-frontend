@@ -9,8 +9,10 @@ interface WordsTableProps {
   onDelete: (id: number) => void;
   onToggleLearned: (id: number) => void;
   onToggleIt: (id: number) => void;
+  onToggleIrrVerb: (id: number) => void;
   onEdit: (id: number) => void;
   query: string;
+  isLoading: boolean;
 }
 
 function WordsTable({
@@ -18,9 +20,21 @@ function WordsTable({
   onDelete,
   onToggleLearned,
   onToggleIt,
+  onToggleIrrVerb,
   query,
   onEdit,
+  isLoading,
 }: WordsTableProps) {
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border py-20 border-gray-200 bg-white shadow-sm flex flex-col items-center justify-center">
+        <div className="size-12 animate-spin rounded-full border-8 border-gray-400 border-t-blue-600" />
+        <p className="text-2xl md:text-3xl xl:text-4xl text-black font-bold">
+          Loading...
+        </p>
+      </div>
+    );
+  }
   if (!words.length) {
     return (
       <div className="rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center text-gray-500">
@@ -34,7 +48,7 @@ function WordsTable({
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        {words.length}
+        {/* {words.length} */}
         <table className="w-full text-left">
           <thead className="border-b border-gray-200 bg-gray-50">
             <tr>
@@ -46,14 +60,17 @@ function WordsTable({
                 Translation
               </th>
 
-              <th className="w-[7%] px-4 py-3 text-sm font-semibold text-gray-700">
+              <th className="w-[5%] px-4 py-3 text-sm font-semibold text-gray-700">
                 Learned
               </th>
-              <th className="w-[7%] px-4 py-3 text-sm font-semibold text-gray-700">
+              <th className="w-[5%] px-4 py-3 text-sm font-semibold text-gray-700">
                 It
               </th>
+              <th className="w-[5%] px-4 py-3 text-sm font-semibold text-gray-700">
+                IrrVerbs
+              </th>
 
-              <th className="w-[6%] px-4 py-3 text-right text-sm font-semibold text-gray-700">
+              <th className="w-[5%] px-4 py-3 text-right text-sm font-semibold text-gray-700">
                 Actions
               </th>
             </tr>
@@ -74,14 +91,14 @@ function WordsTable({
                 <td
                   className={clsx(
                     'px-4 py-3 text-center',
-                    word.learned && 'border-l-5 border-yellow-200'
+                    word.learned && 'border-l-5 border-yellow-400'
                   )}
                 >
                   <input
                     type="checkbox"
                     checked={word.learned}
                     onChange={() => onToggleLearned(word.id)}
-                    className="h-5 w-5 cursor-pointer accent-yellow-500"
+                    className="h-5 w-5 cursor-pointer accent-yellow-400"
                   />
                 </td>
                 <td
@@ -97,7 +114,19 @@ function WordsTable({
                     className="h-5 w-5 cursor-pointer accent-red-500"
                   />
                 </td>
-
+                <td
+                  className={clsx(
+                    'px-4 py-3 text-center',
+                    word.irregularVerb && 'border-l-5 border-green-500'
+                  )}
+                >
+                  <input
+                    type="checkbox"
+                    checked={word.irregularVerb}
+                    onChange={() => onToggleIrrVerb(word.id)}
+                    className="h-5 w-5 cursor-pointer accent-green-500"
+                  />
+                </td>
                 <td className="px-4 py-3 text-right flex flex-row border-l border-gray-300">
                   <button
                     type="button"

@@ -8,3 +8,12 @@ export interface Word {
 }
 
 export type TLearnedFilter = 'all' | 'learned' | 'notLearned';
+
+
+export const defaultWordValue = {
+  word: '',
+  translation: '',
+  learned: false,
+  it: false,
+  irregularVerb: false,
+}

@@ -433,7 +433,7 @@ export default function TrainingPage() {
               checked={currentWord.irregularVerb ?? false}
               onChange={handleToggleVerb}
               onClick={(event) => event.stopPropagation()}
-              className="h-8 w-8 cursor-pointer accent-red-500"
+              className="h-8 w-8 cursor-pointer accent-green-500"
             />
 
             <span className="font-medium text-gray-900">IrrVerb</span>

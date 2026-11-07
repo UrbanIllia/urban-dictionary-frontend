@@ -11,18 +11,20 @@ import {
   getWords,
   updateWord,
 } from '@/lib/api/words';
-import { Word } from '@/types/types';
+import { TWordForm } from '@/schemas/schema';
+import { defaultWordValue, Word } from '@/types/types';
 import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 
 function Dictionary() {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const [queryWord, setqueryWord] = useState<TWordForm>(defaultWordValue);
   const [editingWord, setEditingWord] = useState<Word | null>(null);
 
   const [words, setWords] = useState<Word[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
+  console.log('queryWord', queryWord);
   useEffect(() => {
     const loadWords = async () => {
       try {
@@ -195,9 +197,18 @@ function Dictionary() {
     }
   };
 
-  const filteredWords = words.filter((word) =>
-    word.word.toLowerCase().includes(query.trim().toLowerCase())
-  );
+
+  const filteredWords = words.filter((word) => {
+    const matchesWord = word.word
+      .toLowerCase()
+      .includes(queryWord.word.trim().toLowerCase());
+
+    const matchesLearned = !queryWord.learned || word.learned;
+    const matchesIt = !queryWord.it || word.it;
+    const matchesIrregularVerb = !queryWord.irregularVerb || word.irregularVerb;
+
+    return matchesWord && matchesLearned && matchesIt && matchesIrregularVerb;
+  });
 
   return (
     <ProtectedRoute>
@@ -206,14 +217,31 @@ function Dictionary() {
           <h1 className="text-2xl font-bold text-gray-400">My Dictionary</h1>
 
           <p className="mt-1 text-sm text-gray-500">
-            Add and manage your English words
+            Add and manage your English words, phrases, and expressions.
           </p>
         </div>
 
-        <AddNewWord onAdd={handleAddWord} onQueryChange={setQuery} />
+        <AddNewWord
+          onAdd={handleAddWord}
+          onQueryChange={setQuery}
+          onQueryWordChange={setqueryWord}
+        />
 
-        <h2 className="text-2xl font-bold text-gray-300">Words</h2>
-        <p>Total quantity: {words.length}</p>
+        <h2 className="text-3xl font-bold text-gray-300">Words and Phrases</h2>
+        <div className="flex flex-row justify-between items-center">
+          <p>
+            Total quantity:{' '}
+            <span className="text-xl font-bold">{words.length}</span>
+          </p>
+          <div>
+            <p>Learned: {words.filter((word) => word.learned).length}</p>
+            <p>
+              Irregular verbs:{' '}
+              {words.filter((word) => word.irregularVerb).length}
+            </p>
+            <p>It: {words.filter((word) => word.it).length}</p>
+          </div>
+        </div>
 
         <WordsTable
           words={filteredWords}

@@ -1,8 +1,9 @@
 'use client';
 
 import { TWordForm, wordSchema } from '@/schemas/schema';
-import { Word } from '@/types/types';
+import { defaultWordValue, Word } from '@/types/types';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 
@@ -14,25 +15,33 @@ interface AddNewWordProps {
     >
   ) => Promise<void>;
   onQueryChange: (value: string) => void;
+  onQueryWordChange: (value: TWordForm) => void;
 }
 
-function AddNewWord({ onAdd, onQueryChange }: AddNewWordProps) {
+function AddNewWord({
+  onAdd,
+  onQueryChange,
+  onQueryWordChange,
+}: AddNewWordProps) {
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
     watch,
+    getValues,
   } = useForm<TWordForm>({
     resolver: zodResolver(wordSchema),
-    defaultValues: {
-      word: '',
-      translation: '',
-      learned: false,
-      it: false,
-      irregularVerb: false,
-    },
+    defaultValues: defaultWordValue,
   });
+
+  useEffect(() => {
+    const subscription = watch(() => {
+      onQueryWordChange(getValues());
+    });
+
+    return () => subscription.unsubscribe();
+  }, [watch, getValues, onQueryWordChange]);
   const onSubmit = async (data: TWordForm) => {
     try {
       await onAdd({
@@ -49,13 +58,16 @@ function AddNewWord({ onAdd, onQueryChange }: AddNewWordProps) {
       console.error('Failed to add word:', error);
     }
   };
+
   console.log('WATCH:', watch());
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
       className="flex flex-col gap-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:gap-8 sm:p-5"
     >
-      <h2 className="mb-4 text-lg font-semibold text-gray-800">Add new word</h2>
+      <h2 className="mb-4 text-lg font-semibold text-gray-800">
+        Add something new, or filter from what you already have
+      </h2>
 
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-4 w-full relative">

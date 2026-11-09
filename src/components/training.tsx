@@ -135,7 +135,7 @@ export default function TrainingPage() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [currentWord?.id]);
+  }, [currentWord?.id, currentWord]);
 
   const handleNext = () => {
     if (sessionIndex >= sessionWordIds.length - 1) {
@@ -275,7 +275,7 @@ export default function TrainingPage() {
           </p>
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => router.push('/training')}
             aria-label="Back to dictionary"
             className="mt-2 flex cursor-pointer items-center justify-center rounded-xl border-2 border-gray-800 p-4 transition hover:bg-zinc-500 hover:text-white"
           >
@@ -286,7 +286,6 @@ export default function TrainingPage() {
     );
   }
 
-  // const isLastWord = sessionIndex >= sessionWordIds.length - 1;
 
   return (
     <main className="mx-auto w-4/5 space-y-4 bg-zinc-400 p-4 sm:space-y-6 sm:p-6 md:w-3/4 xl:w-1/2">

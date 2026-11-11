@@ -3,7 +3,6 @@
 import { TWordForm, wordSchema } from '@/schemas/schema';
 import { defaultWordValue, Word } from '@/types/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 
@@ -15,13 +14,11 @@ interface AddNewWordProps {
     >
   ) => Promise<void>;
   onQueryChange: (value: string) => void;
-  onQueryWordChange: (value: TWordForm) => void;
 }
 
 function AddNewWord({
   onAdd,
   onQueryChange,
-  onQueryWordChange,
 }: AddNewWordProps) {
   const {
     register,
@@ -29,19 +26,11 @@ function AddNewWord({
     formState: { errors },
     reset,
     watch,
-    getValues,
   } = useForm<TWordForm>({
     resolver: zodResolver(wordSchema),
     defaultValues: defaultWordValue,
   });
 
-  useEffect(() => {
-    const subscription = watch(() => {
-      onQueryWordChange(getValues());
-    });
-
-    return () => subscription.unsubscribe();
-  }, [watch, getValues, onQueryWordChange]);
   const onSubmit = async (data: TWordForm) => {
     try {
       await onAdd({

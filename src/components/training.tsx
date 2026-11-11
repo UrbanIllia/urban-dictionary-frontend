@@ -1,40 +1,14 @@
 'use client';
 
+import { getFilteredWords, shuffleWords } from '@/lib/api/helpers/helpers';
 import { ApiError, getWords, updateWord } from '@/lib/api/words';
 import { TLearnedFilter, Word } from '@/types/types';
-import { SquareChevronLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-const shuffleWords = (words: Word[]): Word[] => {
-  const shuffled = [...words];
-
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-
-  return shuffled;
-};
-
-const getFilteredWords = (
-  words: Word[],
-  learnedFilter: TLearnedFilter,
-  filterIt: boolean,
-  filterVerb: boolean
-): Word[] => {
-  return words.filter((word) => {
-    const matchesLearned =
-      learnedFilter === 'all' ||
-      (learnedFilter === 'learned' && word.learned) ||
-      (learnedFilter === 'notLearned' && !word.learned);
-
-    const matchesIt = !filterIt || word.it === true;
-    const matchesVerb = !filterVerb || word.irregularVerb === true;
-
-    return matchesLearned && matchesIt && matchesVerb;
-  });
-};
+import NoWordsYet from './no-words-yet';
+import NoWordsFilter from './no-words-filter';
+import TrainingFilters from './training-filters';
+import IsLoaded from './is-loaded';
+import TrainingWindow from './training-window';
 
 export default function TrainingPage() {
   const [words, setWords] = useState<Word[]>([]);
@@ -53,8 +27,6 @@ export default function TrainingPage() {
   const [filterIt, setFilterIt] = useState(false);
   const [filterVerb, setFilterVerb] = useState(false);
   const [isSessionCompleted, setIsSessionCompleted] = useState(false);
-
-  const router = useRouter();
 
   useEffect(() => {
     const loadWords = async () => {
@@ -227,179 +199,38 @@ export default function TrainingPage() {
   };
 
   if (!isLoaded) {
-    return (
-      <main className="flex min-h-[60vh] items-center justify-center p-4 sm:p-6">
-        <div className="flex items-center gap-3">
-          <div className="w-6 h-6 md:w-8 xl:h-10 md:h-8 xl:w-10 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
-          <p className="text-gray-600 text-xl md:text-2xl  xl:text-4xl">
-            Loading words...
-          </p>
-        </div>
-      </main>
-    );
+    return <IsLoaded />;
   }
 
   if (words.length === 0) {
-    return (
-      <main className="mx-auto w-3/4 md:w-2/4 p-4 sm:p-6">
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center sm:p-10">
-          <h1 className="text-xl font-semibold text-gray-800">No words yet</h1>
-
-          <p className="mt-2 text-gray-800">
-            Add some words to your dictionary first.
-          </p>
-
-          <button
-            type="button"
-            onClick={() => router.push('/')}
-            aria-label="Back to dictionary"
-            className="mt-2 flex cursor-pointer items-center justify-center rounded-xl border-2 border-gray-800 p-4 transition hover:bg-zinc-500 hover:text-white"
-          >
-            <SquareChevronLeft size={44} color="#000000" />
-          </button>
-        </div>
-      </main>
-    );
+    return <NoWordsYet />;
   }
 
   if (!currentWord) {
-    return (
-      <main className="mx-auto w-3/4 md:w-2/4 p-4 sm:p-6">
-        <div className="rounded-xl border border-gray-200 bg-white p-6 text-center sm:p-8 flex flex-col items-center justify-center">
-          <h1 className="text-xl font-semibold text-gray-800">
-            No words match these filters
-          </h1>
-
-          <p className="mt-2 text-gray-500">
-            Try changing the filters to start a training session.
-          </p>
-          <button
-            type="button"
-            onClick={() => router.push('/training')}
-            aria-label="Back to dictionary"
-            className="mt-2 flex cursor-pointer items-center justify-center rounded-xl border-2 border-gray-800 p-4 transition hover:bg-zinc-500 hover:text-white"
-          >
-            <SquareChevronLeft size={44} color="#000000" />
-          </button>
-        </div>
-      </main>
-    );
+    return <NoWordsFilter />;
   }
-
 
   return (
     <main className="mx-auto w-4/5 space-y-4 bg-zinc-400 p-4 sm:space-y-6 sm:p-6 md:w-3/4 xl:w-1/2">
-      <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Training</h1>
+      <TrainingFilters
+        learnedFilter={learnedFilter}
+        onLearnedFilterChange={handleLearnedFilterChange}
+        filterIt={filterIt}
+        onItFilterChange={handleItFilterChange}
+        filterVerb={filterVerb}
+        onVerbFilterChange={handleVerbFilterChange}
+        filteredWordsCount={filteredWords.length}
+        engUkr={engUkr}
+        toggleEngUkr={() => setEngUkr((prev) => !prev)}
+      />
 
-        <div className="flex flex-wrap items-center gap-6 rounded-xl border border-gray-200 bg-white p-4">
-          <span className="font-semibold text-gray-900">Learned:</span>
-
-          {[
-            { value: 'all', label: 'All' },
-            { value: 'learned', label: 'Learned' },
-            { value: 'notLearned', label: 'Not learned' },
-          ].map((option) => (
-            <label
-              key={option.value}
-              className="flex cursor-pointer items-center gap-2"
-            >
-              <input
-                type="radio"
-                name="learnedFilter"
-                checked={learnedFilter === option.value}
-                onChange={() =>
-                  handleLearnedFilterChange(option.value as TLearnedFilter)
-                }
-                className="h-5 w-5 cursor-pointer accent-yellow-500"
-              />
-
-              <span className="text-gray-900">{option.label}</span>
-            </label>
-          ))}
-
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              checked={filterIt}
-              onChange={(event) => handleItFilterChange(event.target.checked)}
-              className="h-5 w-5 cursor-pointer accent-red-500"
-            />
-
-            <span className="text-gray-900">IT</span>
-          </label>
-          <label className="flex cursor-pointer items-center gap-2">
-            <input
-              type="checkbox"
-              checked={filterVerb}
-              onChange={(event) => handleVerbFilterChange(event.target.checked)}
-              className="h-5 w-5 cursor-pointer accent-green-500"
-            />
-
-            <span className="text-gray-900">IrrVerb</span>
-          </label>
-
-          <span className="text-sm text-gray-500">
-            {filteredWords.length} words
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setEngUkr((prev) => !prev)}
-          className="flex cursor-pointer flex-row items-center justify-center transition-all hover:scale-105 hover:text-black"
-        >
-          {engUkr ? 'Ukrainian → English' : 'English → Ukrainian'}
-        </button>
-      </div>
-
-      <div
-        onClick={() => setIsTranslationVisible(true)}
-        className="relative flex min-h-150 cursor-pointer flex-col items-center justify-center rounded-2xl border border-gray-200 bg-white p-10 shadow-sm transition hover:shadow-md"
-      >
-        <p className="text-md md:text-xl uppercase tracking-wider text-gray-400">
-          Word
-        </p>
-
-        <h2 className="mt-3 text-center text-3xl font-bold text-gray-900 sm:text-5xl xl:text-6xl">
-          {engUkr ? currentWord.translation : currentWord.word}
-        </h2>
-
-        <div className="mt-10 min-h-10">
-          {isTranslationVisible ? (
-            <p className="text-center text-2xl font-medium text-blue-600 sm:text-3xl xl:text-4xl">
-              {engUkr ? currentWord.word : currentWord.translation}
-            </p>
-          ) : (
-            <div className="flex flex-col items-center justify-center">
-              <p className="text-center text-base text-gray-400 sm:text-xl md:text-2xl">
-                Translation is hidden
-              </p>
-
-              <p className="mt-3 text-3xl font-semibold tabular-nums text-gray-600">
-                {timeLeft}s
-              </p>
-            </div>
-          )}
-        </div>
-
-        {currentWord.it && (
-          <p className="absolute right-5 top-5 rounded-xl border border-red-500 px-4 py-2 text-2xl font-semibold text-red-600">
-            IT
-          </p>
-        )}
-
-        {currentWord.learned && (
-          <p className="absolute left-5 top-5 rounded-xl border border-yellow-600 px-4 py-2 text-2xl font-semibold text-yellow-600">
-            LEARNED
-          </p>
-        )}
-        {currentWord.irregularVerb && (
-          <p className="absolute left-1/2 translate-x-[-50%] top-5 rounded-xl border border-green-600 px-4 py-2 text-2xl font-semibold text-green-600">
-            IRRVERB
-          </p>
-        )}
-      </div>
+      <TrainingWindow
+        engUkr={engUkr}
+        currentWord={currentWord}
+        timeLeft={timeLeft}
+        isTranslationVisible={isTranslationVisible}
+        setIsTranslationVisible={setIsTranslationVisible}
+      />
 
       <div className="mt-5 flex flex-col items-center justify-center gap-4">
         <div className="mt-5 flex items-center justify-center gap-8">

@@ -3,6 +3,7 @@
 import AddNewWord from '@/components/add-new-word';
 import EditWordModal from '@/components/edit-word-modal';
 import ProtectedRoute from '@/components/protected-route';
+import WordFilters from '@/components/word-filter';
 import WordsTable from '@/components/word-table';
 import {
   ApiError,
@@ -11,20 +12,21 @@ import {
   getWords,
   updateWord,
 } from '@/lib/api/words';
-import { TWordForm } from '@/schemas/schema';
-import { defaultWordValue, Word } from '@/types/types';
+import { TDatePeriod, TLearnedFilter, Word } from '@/types/types';
 import { useEffect, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 
 function Dictionary() {
-  const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [queryWord, setqueryWord] = useState<TWordForm>(defaultWordValue);
   const [editingWord, setEditingWord] = useState<Word | null>(null);
-
+  const [learnedFilter, setLearnedFilter] = useState<TLearnedFilter>('all');
+  const [filterIt, setFilterIt] = useState(false);
+  const [filterVerb, setFilterVerb] = useState(false);
   const [words, setWords] = useState<Word[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  console.log('queryWord', queryWord);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [datePeriod, setDatePeriod] = useState<TDatePeriod>('all');
   useEffect(() => {
     const loadWords = async () => {
       try {
@@ -46,7 +48,17 @@ function Dictionary() {
   }, []);
 
   const allWords = JSON.stringify(words);
+  const handleLearnedFilterChange = (value: TLearnedFilter) => {
+    setLearnedFilter(value);
+  };
 
+  const handleItFilterChange = (value: boolean) => {
+    setFilterIt(value);
+  };
+
+  const handleVerbFilterChange = (value: boolean) => {
+    setFilterVerb(value);
+  };
   const handleEditWord = async (
     id: number,
     updatedWord: Pick<Word, 'word' | 'translation'>
@@ -187,28 +199,59 @@ function Dictionary() {
       toast.error('Failed to update it status');
     }
   };
+  const filteredWords = words.filter((word) => {
+    const createdAt = new Date(word.createdAt);
 
-  const handleCopy = async () => {
+    const wordDate = [
+      createdAt.getFullYear(),
+      String(createdAt.getMonth() + 1).padStart(2, '0'),
+      String(createdAt.getDate()).padStart(2, '0'),
+    ].join('-');
+
+    const matchesDate =
+      (!dateFrom || wordDate >= dateFrom) && (!dateTo || wordDate <= dateTo);
+    const matchesWord = word.word
+      .toLowerCase()
+      .includes(query.trim().toLowerCase());
+
+    const matchesLearned =
+      learnedFilter === 'all' ||
+      (learnedFilter === 'learned' && word.learned) ||
+      (learnedFilter === 'notLearned' && !word.learned);
+
+    const matchesIt = !filterIt || word.it;
+    const matchesIrregularVerb = !filterVerb || word.irregularVerb;
+
+    return (
+      matchesWord &&
+      matchesLearned &&
+      matchesIt &&
+      matchesIrregularVerb &&
+      matchesDate
+    );
+  });
+  const handleCopyFullJSON = async () => {
     try {
       await navigator.clipboard.writeText(allWords);
-      toast.success('Downloaded, you can paste it!');
+      toast.success('Downloaded, you can make ctrl + v!');
     } catch (err) {
       console.error('Не удалось скопировать', err);
     }
   };
+  const handleCopyFilteredWords = async () => {
+    try {
+      const text = filteredWords
+        .map((word) => `${word.word} — ${word.translation}`)
+        .join('\n');
 
+      await navigator.clipboard.writeText(text);
 
-  const filteredWords = words.filter((word) => {
-    const matchesWord = word.word
-      .toLowerCase()
-      .includes(queryWord.word.trim().toLowerCase());
-
-    const matchesLearned = !queryWord.learned || word.learned;
-    const matchesIt = !queryWord.it || word.it;
-    const matchesIrregularVerb = !queryWord.irregularVerb || word.irregularVerb;
-
-    return matchesWord && matchesLearned && matchesIt && matchesIrregularVerb;
-  });
+      toast.success('Filtered words copied, you can make ctrl + v!');
+    } catch (err) {
+      console.error('Не удалось скопировать', err);
+      toast.error('Failed to copy words');
+    }
+  };
 
   return (
     <ProtectedRoute>
@@ -221,11 +264,7 @@ function Dictionary() {
           </p>
         </div>
 
-        <AddNewWord
-          onAdd={handleAddWord}
-          onQueryChange={setQuery}
-          onQueryWordChange={setqueryWord}
-        />
+        <AddNewWord onAdd={handleAddWord} onQueryChange={setQuery} />
 
         <h2 className="text-3xl font-bold text-gray-300">Words and Phrases</h2>
         <div className="flex flex-row justify-between items-center">
@@ -242,7 +281,20 @@ function Dictionary() {
             <p>It: {words.filter((word) => word.it).length}</p>
           </div>
         </div>
-
+        <WordFilters
+          learnedFilter={learnedFilter}
+          onLearnedFilterChange={handleLearnedFilterChange}
+          filterIt={filterIt}
+          onItFilterChange={handleItFilterChange}
+          filterVerb={filterVerb}
+          onVerbFilterChange={handleVerbFilterChange}
+          from={dateFrom}
+          to={dateTo}
+          period={datePeriod}
+          onFromChange={setDateFrom}
+          onToChange={setDateTo}
+          onPeriodChange={setDatePeriod}
+        />
         <WordsTable
           words={filteredWords}
           isLoading={isLoading}
@@ -263,25 +315,19 @@ function Dictionary() {
           <div className="flex flex-row justify-center items-center gap-20">
             <button
               type="button"
-              onClick={() => setIsOpen((prev) => !prev)}
+              onClick={handleCopyFilteredWords}
               className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700 active:scale-[0.98]"
             >
-              {isOpen ? 'Close something' : 'Open something'}
+              Download filtered words
             </button>
             <button
               type="button"
-              onClick={handleCopy}
+              onClick={handleCopyFullJSON}
               className="cursor-pointer rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-700 active:scale-[0.98]"
             >
-              Download
+              Download full JSON
             </button>
           </div>
-
-          {isOpen && (
-            <div>
-              <p>{allWords}</p>
-            </div>
-          )}
         </div>
         {editingWord && (
           <EditWordModal
